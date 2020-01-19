@@ -1,13 +1,12 @@
+import datetime
+import json
+import math
 import threading
 import time
+
+import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
-import json
-import pandas as pd
-import datetime
-import math
-import sys
-import concurrent.futures
 
 # Capture Start Time
 start_time = time.time()
@@ -56,7 +55,6 @@ def jira_parse(jql, start_at, maxResults):
 def processJQL(startAt, endAt, maxresults, jql):
     str_json = ""
     strComma = ""
-    time.sleep(0.1)
 
     j = startAt
     while True:
