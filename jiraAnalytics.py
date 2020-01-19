@@ -24,7 +24,7 @@ def writeToJsonFile(path, filename, data):
 # JIRA
 def jira_parse(jql, start_at, maxResults):
     url = "https://askblackswan.atlassian.net/rest/api/3/search?startAt=" + str(
-        start_at) + "&maxResults=" + str(maxResults)+"&expand=changelog"
+        start_at) + "&maxResults=" + str(maxResults) + "&expand=changelog"
     auth = HTTPBasicAuth("prasannakumar.karakavalasa@cigniti.com", "CHMlaJNzzYtLR33KePbB3D04")
     headers = {
         "Accept": "application/json"
@@ -32,7 +32,7 @@ def jira_parse(jql, start_at, maxResults):
     if jql == 1:
         query = {
 
-            'jql': 'project = "TRT EPOS" AND issuetype="QA TASK" ORDER BY  '
+            'jql': 'project = "TRT EPOS"  and issuetype="QA TASK" ORDER BY  '
                    'id ASC', "fields": ["id", "key", "reporter", "summary", "priority", "issuetype", "status",
                                         "customfield_18695", "customfield_11401", "assignee", "created", "updated",
                                         "fixVersions", "components", "issuelinks", "labels"]
@@ -56,6 +56,7 @@ def jira_parse(jql, start_at, maxResults):
 def processJQL(startAt, endAt, maxresults, jql):
     str_json = ""
     strComma = ""
+    time.sleep(0.1)
 
     j = startAt
     while True:
@@ -146,18 +147,21 @@ def processJQL(startAt, endAt, maxresults, jql):
         j += maxresults
         if j == endAt or j > endAt:
             break
-    # print("Thread -- ", startAt, " - ", endAt, " - ", str_json)
+    if str_json != "":
+        print("Thread -- ", startAt, " - ", endAt, " - ", str_json)
+
     jsonlst.append(str_json)
 
 
 total_issues = json.loads(jira_parse(0, 0, 0))["total"]
-total_threads = 15
+total_threads = 10
 step = math.ceil(total_issues / total_threads)
 
 if step >= 100:
     maxResults = 100
 else:
     maxResults = step
+
 
 for i_thread in range(0, total_issues, step):
     # print("Thread from main program...........From......", i_thread, "...to...", i_thread + step)
@@ -180,6 +184,15 @@ for item in jsonlst:
         strComma = ","
     if iComma == len(jsonlst):
         strComma = ""
+    # filename = "json" + str(iComma)
+    # writeFile = open(filename, 'w')
+    # writeFile.write('{' + item + '}')
+    path = './'
+    filename = "JiraImport_" + str(iComma)
+    writeToJsonFile(path, filename,
+                    json.loads(
+                        json.dumps(json.loads('{' + item + '}'), sort_keys=True, indent=4, separators=(",", ": "))))
+
     strJson = strJson + strComma + item
     iComma += 1
 
@@ -189,4 +202,4 @@ df = pd.DataFrame(finalJson)
 dfT = df.transpose()
 dfT.to_csv("./""" + "JIRADUMP" + ".csv", index=False)
 print("--- %s seconds ---" % (time.time() - start_time))
-#https://askblackswan.atlassian.net/rest/api/2/issue/TRTEPOS-11390/transitions??expand=transitions.fields
+# https://askblackswan.atlassian.net/rest/api/2/issue/TRTEPOS-11390/transitions??expand=transitions.fields
