@@ -30,7 +30,7 @@ def jira_parse(jql, start_at, maxResults):
     }
     query = {
 
-        'jql': 'project = "TRT EPOS" and issuekey=TRTEPOS-10462 ORDER BY  '
+        'jql': 'project = "TRT EPOS" ORDER BY  '
                'id ASC', "fields": ["id", "key", "reporter", "summary", "priority", "issuetype", "status",
                                     "customfield_18695", "customfield_11401", "assignee", "created", "updated",
                                     "fixVersions", "components", "issuelinks", "labels"]
@@ -140,14 +140,14 @@ def processJQL(startAt, endAt, maxresults, jql):
         j += maxresults
         if j == endAt or j > endAt:
             break
-    if str_json != "":
-        print("Thread -- ", startAt, " - ", endAt, " - ", str_json)
+    # if str_json != "":
+    #     print("Thread -- ", startAt, " - ", endAt, " - ", str_json)
 
     jsonlst.append(str_json)
 
 
 total_issues = json.loads(jira_parse(0, 0, 0))["total"]
-total_threads = 10
+total_threads = 15
 maxResults = 100
 
 if math.ceil(total_issues / 100) < total_threads:
@@ -159,11 +159,8 @@ if step < 100:
     step = 100
 
 for i_thread in range(0, total_issues, step):
-    # print("Thread from main program...........From......", i_thread, "...to...", i_thread + step)
     threading.Thread(target=processJQL, args=(i_thread, i_thread + step, maxResults, 1,)).start()
-    # processJQL(i_thread, i_thread + step, maxResults, 1)
-    # print("Thread ",i_thread, " Json --------------------------------------->")
-    # print("Thread from main program...........................", i_thread, "...to...", i_thread + step, "  completed")
+
 
 # wait threads to finish
 while threading.active_count() > 1:
@@ -197,3 +194,7 @@ print("--- %s seconds ---" % (time.time() - start_time))
 # writeToJsonFile(path, filename,
 #                 json.loads(
 #                     json.dumps(json.loads('{' + item + '}'), sort_keys=True, indent=4, separators=(",", ": "))))
+# processJQL(i_thread, i_thread + step, maxResults, 1)
+# print("Thread ",i_thread, " Json --------------------------------------->")
+# print("Thread from main program...........................", i_thread, "...to...", i_thread + step, "  completed")
+# print("Thread from main program...........From......", i_thread, "...to...", i_thread + step)
