@@ -148,6 +148,8 @@ def processJQL(startAt, endAt, maxresults, jql):
 
 total_issues = json.loads(jira_parse(0, 0, 0))["total"]
 total_threads = 10
+maxResults = 100
+
 if math.ceil(total_issues / 100) < total_threads:
     total_threads = math.ceil(total_issues / 100)
 
@@ -155,11 +157,6 @@ step = math.ceil(total_issues / total_threads)
 
 if step < 100:
     step = 100
-
-if step >= 100:
-    maxResults = 100
-else:
-    maxResults = step
 
 for i_thread in range(0, total_issues, step):
     # print("Thread from main program...........From......", i_thread, "...to...", i_thread + step)
