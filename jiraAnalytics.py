@@ -28,19 +28,14 @@ def jira_parse(jql, start_at, maxResults):
     headers = {
         "Accept": "application/json"
     }
-    if jql == 1:
-        query = {
+    query = {
 
-            'jql': 'project = "TRT EPOS"  and issuetype="QA TASK" ORDER BY  '
-                   'id ASC', "fields": ["id", "key", "reporter", "summary", "priority", "issuetype", "status",
-                                        "customfield_18695", "customfield_11401", "assignee", "created", "updated",
-                                        "fixVersions", "components", "issuelinks", "labels"]
-        }
+        'jql': 'project = "TRT EPOS" and issuekey=TRTEPOS-10462 ORDER BY  '
+               'id ASC', "fields": ["id", "key", "reporter", "summary", "priority", "issuetype", "status",
+                                    "customfield_18695", "customfield_11401", "assignee", "created", "updated",
+                                    "fixVersions", "components", "issuelinks", "labels"]
+    }
 
-    if jql == 0:
-        query = {
-            'jql': 'project = "TRT EPOS" AND issuetype!="QA TASK" ORDER BY id ASC'
-        }
     response = requests.request(
         "GET",
         url,
@@ -153,13 +148,18 @@ def processJQL(startAt, endAt, maxresults, jql):
 
 total_issues = json.loads(jira_parse(0, 0, 0))["total"]
 total_threads = 10
+if math.ceil(total_issues / 100) < total_threads:
+    total_threads = math.ceil(total_issues / 100)
+
 step = math.ceil(total_issues / total_threads)
+
+if step < 100:
+    step = 100
 
 if step >= 100:
     maxResults = 100
 else:
     maxResults = step
-
 
 for i_thread in range(0, total_issues, step):
     # print("Thread from main program...........From......", i_thread, "...to...", i_thread + step)
@@ -182,15 +182,6 @@ for item in jsonlst:
         strComma = ","
     if iComma == len(jsonlst):
         strComma = ""
-    # filename = "json" + str(iComma)
-    # writeFile = open(filename, 'w')
-    # writeFile.write('{' + item + '}')
-    path = './'
-    filename = "JiraImport_" + str(iComma)
-    writeToJsonFile(path, filename,
-                    json.loads(
-                        json.dumps(json.loads('{' + item + '}'), sort_keys=True, indent=4, separators=(",", ": "))))
-
     strJson = strJson + strComma + item
     iComma += 1
 
@@ -201,3 +192,11 @@ dfT = df.transpose()
 dfT.to_csv("./""" + "JIRADUMP" + ".csv", index=False)
 print("--- %s seconds ---" % (time.time() - start_time))
 # https://askblackswan.atlassian.net/rest/api/2/issue/TRTEPOS-11390/transitions??expand=transitions.fields
+# filename = "json" + str(iComma)
+# writeFile = open(filename, 'w')
+# writeFile.write('{' + item + '}')
+# path = './'
+# filename = "JiraImport_" + str(iComma)
+# writeToJsonFile(path, filename,
+#                 json.loads(
+#                     json.dumps(json.loads('{' + item + '}'), sort_keys=True, indent=4, separators=(",", ": "))))
