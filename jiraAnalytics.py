@@ -13,37 +13,43 @@ start_time = time.time()
 jsonlst = []
 
 
+class Jira:
+
+    # JIRA
+    def jira_parse(*args, **kwargs):
+        jql = args[0]
+        start_at = args[1]
+        maxResults = args[2]
+
+        url = "https://askblackswan.atlassian.net/rest/api/3/search?startAt=" + str(
+            start_at) + "&maxResults=" + str(maxResults) + "&expand=changelog"
+        auth = HTTPBasicAuth("prasannakumar.karakavalasa@cigniti.com", "CHMlaJNzzYtLR33KePbB3D04")
+        headers = {
+            "Accept": "application/json"
+        }
+        query = {
+
+            'jql': 'project = "TRT EPOS"  ORDER BY  '
+                   'id ASC', "fields": ["id", "key", "reporter", "summary", "priority", "issuetype", "status",
+                                        "customfield_18695", "customfield_11401", "assignee", "created", "updated",
+                                        "fixVersions", "components", "issuelinks", "labels"]
+        }
+
+        response = requests.request(
+            "GET",
+            url,
+            headers=headers,
+            params=query,
+            auth=auth
+        )
+        return response.text
+
+
 # Create new JSON file
 def writeToJsonFile(path, filename, data):
     filePathNameExt = './' + path + '/' + filename + '.json'
     with open(filePathNameExt, 'w', encoding='utf-8') as fp:
         json.dump(data, fp, ensure_ascii=False, indent=4)
-
-
-# JIRA
-def jira_parse(jql, start_at, maxResults):
-    url = "https://askblackswan.atlassian.net/rest/api/3/search?startAt=" + str(
-        start_at) + "&maxResults=" + str(maxResults) + "&expand=changelog"
-    auth = HTTPBasicAuth("prasannakumar.karakavalasa@cigniti.com", "CHMlaJNzzYtLR33KePbB3D04")
-    headers = {
-        "Accept": "application/json"
-    }
-    query = {
-
-        'jql': 'project = "TRT EPOS"  ORDER BY  '
-               'id ASC', "fields": ["id", "key", "reporter", "summary", "priority", "issuetype", "status",
-                                    "customfield_18695", "customfield_11401", "assignee", "created", "updated",
-                                    "fixVersions", "components", "issuelinks", "labels"]
-    }
-
-    response = requests.request(
-        "GET",
-        url,
-        headers=headers,
-        params=query,
-        auth=auth
-    )
-    return response.text
 
 
 # process JQL in multithreading
@@ -54,7 +60,7 @@ def processJQL(startAt, endAt, maxresults, jql):
     j = startAt
     while True:
         # start_time1 = time.time()
-        jsonOutVal = json.loads(jira_parse(jql, j, maxresults))
+        jsonOutVal = json.loads(jira.jira_parse(jql, j, maxresults))
         # print("--Thread --", startAt,  " -- ",endAt," -- ", (time.time() - start_time1), " Seconds")
         totalIssue = len(jsonOutVal["issues"])
         # print("Total Issues in Thread : ", startAt, " -- ", totalIssue)
@@ -151,7 +157,8 @@ def processJQL(startAt, endAt, maxresults, jql):
     jsonlst.append(str_json)
 
 
-total_issues = json.loads(jira_parse(0, 0, 0))["total"]
+jira = Jira
+total_issues = json.loads(jira.jira_parse(0, 0, 0))["total"]
 total_threads = 15
 maxResults = 100
 
@@ -165,7 +172,6 @@ if step < 100:
 
 for i_thread in range(0, total_issues, step):
     threading.Thread(target=processJQL, args=(i_thread, i_thread + step, maxResults, 1,)).start()
-
 
 # wait threads to finish
 while threading.active_count() > 1:
