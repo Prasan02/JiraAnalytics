@@ -30,7 +30,7 @@ def jira_parse(jql, start_at, maxResults):
     }
     query = {
 
-        'jql': 'project = "TRT EPOS" ORDER BY  '
+        'jql': 'project = "TRT EPOS"  ORDER BY  '
                'id ASC', "fields": ["id", "key", "reporter", "summary", "priority", "issuetype", "status",
                                     "customfield_18695", "customfield_11401", "assignee", "created", "updated",
                                     "fixVersions", "components", "issuelinks", "labels"]
@@ -83,6 +83,11 @@ def processJQL(startAt, endAt, maxresults, jql):
                     iLinkedIssues += 1
                     if iLinkedIssues == len(jsonOutVal["issues"][i]["fields"]["issuelinks"]):
                         break;
+            # path = './'
+            # filename = "JiraImport"
+            # writeToJsonFile(path, filename,
+            #                 json.loads(
+            #                     json.dumps(jsonOutVal, sort_keys=True, indent=4, separators=(",", ": "))))
 
             # labels
             iLabels = 0
@@ -185,6 +190,7 @@ df = pd.DataFrame(finalJson)
 dfT = df.transpose()
 dfT.to_csv("./""" + "JIRADUMP" + ".csv", index=False)
 print("--- %s seconds ---" % (time.time() - start_time))
+
 # https://askblackswan.atlassian.net/rest/api/2/issue/TRTEPOS-11390/transitions??expand=transitions.fields
 # filename = "json" + str(iComma)
 # writeFile = open(filename, 'w')
