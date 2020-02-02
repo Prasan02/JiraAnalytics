@@ -3,9 +3,11 @@ import json
 import math
 import threading
 import time
+import xml.etree.ElementTree as ET
 
 import pandas as pd
 import requests
+from json2xml import json2xml
 from requests.auth import HTTPBasicAuth
 
 # Capture Start Time
@@ -13,8 +15,26 @@ start_time = time.time()
 jsonlst = []
 
 
-class Jira:
+def getTransistion_json(json, issueid):
+    # print("------------------------------------------", issueid,
+    #       "------------------------------------------------")
+    allstatus = ""
+    for a in json:
+        if a['items'][0]['field'] == "status":
+            author = (a['author']['key'] if 'author' in a else "No author")
+            fromString = (a['items'][0]['fromString'] if 'items' in a else "No from status")
+            toString = (a['items'][0]['toString'] if 'items' in a else "No to status")
+            createdstatus = (a['created'] if 'created' in a else "No to Created date")
+            try:
+                allstatus = allstatus + ">" + "[" + fromString + "," + toString + "," + \
+                            author + "," + createdstatus + "]"
+            except Exception as e:
+                allstatus = "error" + str(e)
+    # print(allstatus)
+    return allstatus
 
+
+class Jira:
     # JIRA
     def jira_parse(*args, **kwargs):
         jql = args[0]
@@ -29,7 +49,7 @@ class Jira:
         }
         query = {
 
-            'jql': 'project = "TRT EPOS"  ORDER BY  '
+            'jql': 'project = "TRT EPOS" ORDER BY  '
                    'id ASC', "fields": ["id", "key", "reporter", "summary", "priority", "issuetype", "status",
                                         "customfield_18695", "customfield_11401", "assignee", "created", "updated",
                                         "fixVersions", "components", "issuelinks", "labels"]
@@ -52,6 +72,46 @@ def writeToJsonFile(path, filename, data):
         json.dump(data, fp, ensure_ascii=False, indent=4)
 
 
+# get Jira transitions
+def getTransition(json):
+    xml = json2xml.Json2xml(json).to_xml()
+    root = ET.fromstring(xml)
+    statusUpdate = ""
+    lst = []
+    for issues in root.findall('issues'):
+        # print(issues.find('key').text)
+        for history in issues.findall('changelog/histories'):
+            if history.find('author/key') is not None:
+                author = history.find('author/key').text
+            else:
+                author = "No author"
+
+            if history.find('items/fromString') is not None:
+                fromString = history.find('items/fromString').text
+            else:
+                fromString = "NoFromStatus"
+
+            if history.find('items/toString') is not None:
+                toString = history.find('items/toString').text
+            else:
+                toString = "NoToString"
+
+            if history.find('created') is not None:
+                createdstatus = history.find('created').text
+            else:
+                createdstatus = "NoCreated"
+            try:
+                if history.find('items/field').text == 'status':
+                    statusUpdate = "[" + fromString + "," + toString + "," + \
+                                   author + "," + createdstatus + "]"
+            except Exception as e:
+                statusUpdate = "error" + str(e)
+
+            lst.append(statusUpdate)
+
+    return lst
+
+
 # process JQL in multithreading
 def processJQL(startAt, endAt, maxresults, jql):
     str_json = ""
@@ -61,20 +121,20 @@ def processJQL(startAt, endAt, maxresults, jql):
     while True:
         # start_time1 = time.time()
         jsonOutVal = json.loads(jira.jira_parse(jql, j, maxresults))
-        # print("--Thread --", startAt,  " -- ",endAt," -- ", (time.time() - start_time1), " Seconds")
         totalIssue = len(jsonOutVal["issues"])
-        # print("Total Issues in Thread : ", startAt, " -- ", totalIssue)
+        # transitionslst = getTransition(jsonOutVal)
         i = 0
         while i < totalIssue:
             # JSON file construction
-            # print(jsonOutVal["issues"][i]["key"], "-", startAt + j + i, "-",
-            # jsonOutVal["issues"][i]["fields"]["summary"])
             # linked issues
             iLinkedIssues = 0
             strLnkedSubissues = "";
             strLnkedissues = ""
+            transitions = getTransistion_json(jsonOutVal["issues"][i]["changelog"]["histories"],
+                                              jsonOutVal["issues"][i]["key"])
 
             if len(jsonOutVal["issues"][i]["fields"]["issuelinks"]) > 0:
+
                 while True:
                     if 'outwardIssue' in jsonOutVal["issues"][i]["fields"]["issuelinks"][iLinkedIssues]:
                         strLnkedSubissues = \
@@ -136,6 +196,7 @@ def processJQL(startAt, endAt, maxresults, jql):
                          + '"assignee" :' + '"' + "%s" % (
                              'None' if jsonOutVal["issues"][i]["fields"]["assignee"] is None else
                              jsonOutVal["issues"][i]["fields"]["assignee"]["displayName"]) + '",' \
+                         + '"transitions" :' + '"' + transitions + '",' \
                          + '"labels" :' + '"' + strLabel + '",' \
                          + '"linkedIssues" :' + '"' + strLnkedissues \
                          + '"}'
@@ -159,7 +220,7 @@ def processJQL(startAt, endAt, maxresults, jql):
 
 jira = Jira
 total_issues = json.loads(jira.jira_parse(0, 0, 0))["total"]
-total_threads = 15
+total_threads = 20
 maxResults = 100
 
 if math.ceil(total_issues / 100) < total_threads:
@@ -194,7 +255,10 @@ finalJson = json.loads('{' + strJson + '}')
 
 df = pd.DataFrame(finalJson)
 dfT = df.transpose()
-dfT.to_csv("./""" + "JIRADUMP" + ".csv", index=False)
+dfS = dfT.sort_index()
+print(dfS)
+
+dfS.to_csv("./""" + "JIRADUMP" + ".csv")  # , index=False
 print("--- %s seconds ---" % (time.time() - start_time))
 
 # https://askblackswan.atlassian.net/rest/api/2/issue/TRTEPOS-11390/transitions??expand=transitions.fields
