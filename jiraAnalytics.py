@@ -16,9 +16,9 @@ jsonlst = []
 
 
 def getTransistion_json(json, issueid):
-    # print("------------------------------------------", issueid,
-    #       "------------------------------------------------")
+
     allstatus = ""
+    status = []
     for a in json:
         if a['items'][0]['field'] == "status":
             author = (a['author']['key'] if 'author' in a else "No author")
@@ -26,12 +26,14 @@ def getTransistion_json(json, issueid):
             toString = (a['items'][0]['toString'] if 'items' in a else "No to status")
             createdstatus = (a['created'] if 'created' in a else "No to Created date")
             try:
-                allstatus = allstatus + ">" + "[" + fromString + "," + toString + "," + \
-                            author + "," + createdstatus + "]"
+                # allstatus = allstatus + ">" + "[" + fromString + "," + toString + "," + \
+                #             author + "," + createdstatus + "]"
+                status.append("[" + fromString + "," + toString + "," + \
+                              author + "," + createdstatus + "]")
             except Exception as e:
                 allstatus = "error" + str(e)
-    # print(allstatus)
-    return allstatus
+    # print(str(status).replace("'",""))
+    return str(status).replace("'", "")
 
 
 class Jira:
@@ -166,7 +168,7 @@ def processJQL(startAt, endAt, maxresults, jql):
                     if iLabels == len(jsonOutVal["issues"][i]["fields"]["labels"]):
                         break;
 
-            strSubJson = '"' + jsonOutVal["issues"][i]["id"] + '" : {' \
+            strSubJson = '"' + (jsonOutVal["issues"][i]["key"]).split("-")[1] + '" : {' \
                          + '"issueKey" :' + '"' + jsonOutVal["issues"][i]["key"] + '"' + "," \
                          + '"issueType" :' + '"' + jsonOutVal["issues"][i]["fields"]["issuetype"]["name"] + '"' + "," \
                          + '"summary" :' + '"' + (
@@ -255,10 +257,10 @@ finalJson = json.loads('{' + strJson + '}')
 
 df = pd.DataFrame(finalJson)
 dfT = df.transpose()
+dfT.index = dfT.index.astype(int)
 dfS = dfT.sort_index()
-print(dfS)
 
-dfS.to_csv("./""" + "JIRADUMP" + ".csv")  # , index=False
+dfS.to_csv("./""" + "JIRADUMP" + ".csv", index=False)
 print("--- %s seconds ---" % (time.time() - start_time))
 
 # https://askblackswan.atlassian.net/rest/api/2/issue/TRTEPOS-11390/transitions??expand=transitions.fields
