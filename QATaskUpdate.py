@@ -37,7 +37,7 @@ def jira_parse(**kwargs):
     return response.text
 
 
-url = "https://askblackswan.atlassian.net/rest/api/3/search?"
+url = "https://askblackswan.atlassian.net/rest/api/3/search?&expand=changelog"
 jql = '{"jql":"project = '"'TRT EPOS'"' AND issuetype='"'QA TASK'"'and assignee=prasannakumar.karakavalasa and status ' \
       '='"'Ready for Sign Off'"' ","fields":["key"]}'
 # url, query, payload

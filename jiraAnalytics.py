@@ -9,6 +9,7 @@ import pandas as pd
 import requests
 from json2xml import json2xml
 from requests.auth import HTTPBasicAuth
+from tqdm import tqdm
 
 # Capture Start Time
 start_time = time.time()
@@ -16,7 +17,6 @@ jsonlst = []
 
 
 def getTransistion_json(json, issueid):
-
     allstatus = ""
     status = []
     for a in json:
@@ -28,8 +28,8 @@ def getTransistion_json(json, issueid):
             try:
                 # allstatus = allstatus + ">" + "[" + fromString + "," + toString + "," + \
                 #             author + "," + createdstatus + "]"
-                status.append("[" + fromString + "," + toString + "," + \
-                              author + "," + createdstatus + "]")
+                status.append(fromString + ">" + toString + "-" + \
+                              author + "^" + createdstatus)
             except Exception as e:
                 allstatus = "error" + str(e)
     # print(str(status).replace("'",""))
@@ -235,6 +235,18 @@ if step < 100:
 
 for i_thread in range(0, total_issues, step):
     threading.Thread(target=processJQL, args=(i_thread, i_thread + step, maxResults, 1,)).start()
+
+iprogress = 0
+pbar = tqdm(total=100, desc="Pulling data from Jira")
+while True:
+    # print((len(jsonlst) * step),"%", total_issues,"=",iprogress)
+    # tqdm.write("Done task %i" % iprogress)
+    pbar.update((((len(jsonlst) * step) / total_issues) * 100) - iprogress)
+    iprogress = ((len(jsonlst) * step) / total_issues) * 100
+    if len(jsonlst) * step >= total_issues:
+        pbar.close()
+        break;
+    time.sleep(0.1)
 
 # wait threads to finish
 while threading.active_count() > 1:
