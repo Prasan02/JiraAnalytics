@@ -39,12 +39,12 @@ def jira_parse(**kwargs):
 
 url = "https://askblackswan.atlassian.net/rest/api/3/search?&expand=changelog"
 jql = '{"jql":"project = '"'TRT EPOS'"' AND issuetype='"'QA TASK'"'and assignee=prasannakumar.karakavalasa and status ' \
-      '='"'Ready for Sign Off'"' ","fields":["key"]}'
+      '='"'Ready for Sign Off'"' ","fields":["key","summary"]}'
 # url, query, payload
 jira_response = json.loads(jira_parse(url=url, query=jql))["issues"]
 
 for istatus_update in jira_response:
-    print(istatus_update["key"])
+    print(istatus_update["key"], istatus_update["fields"]["summary"])
     issue = istatus_update["key"]
     url = "https://askblackswan.atlassian.net/rest/api/3/issue/" + issue + "/transitions"
     id = 41

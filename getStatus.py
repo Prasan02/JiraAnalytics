@@ -47,9 +47,11 @@ def getTransistion_json(json, **kwargs):
 
 
 get_response = Jira
-# url = "https://askblackswan.atlassian.net/rest/api/3/issue/TRTEPOS-9667?expand=changelog&fields="""
-url = "https://askblackswan.atlassian.net/rest/api/3/search?startAt=0&maxResults=100&expand=changelog"
-jql = '{"jql":"project = '"'TRT EPOS'"' ORDER BY ID ASC  "}'
+
+url = "https://askblackswan.atlassian.net/rest/api/2/issue/TRTEPOS-5883/changelog"
+
+# url = "https://askblackswan.atlassian.net/rest/api/2/search?startAt=0&maxResults=100&expand=changelog"
+jql = '{"jql":"project = '"'TRT EPOS'"' and issuekey=TRTEPOS-5883 ORDER BY ID ASC  "}'
 response = json.loads(get_response.jira_parse("GET", url=url, query=jql))
 getTransistion_json(response)
 

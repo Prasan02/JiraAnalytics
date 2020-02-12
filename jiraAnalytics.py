@@ -124,7 +124,6 @@ def processJQL(startAt, endAt, maxresults, jql):
         # start_time1 = time.time()
         jsonOutVal = json.loads(jira.jira_parse(jql, j, maxresults))
         totalIssue = len(jsonOutVal["issues"])
-        # transitionslst = getTransition(jsonOutVal)
         i = 0
         while i < totalIssue:
             # JSON file construction
